@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Patti Receipt</title>
+    <style>
+        @font-face {
+            font-family: 'UrduFont';
+            src: url("file://{{ urdu_font_path }}");
+        }
+        @font-face {
+            font-family: 'MarathiFont';
+            src: url("file://{{ marathi_font_path }}");
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 16pt;
+            margin: 20px;
+        }
+
+        .header {
+            text-align: center;
+            background-color: #28a745;
+            color: white;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .urdu {
+            font-family: 'UrduFont';
+            font-size: 20pt;
+        }
+
+        .marathi {
+            font-family: 'MarathiFont';
+            font-size: 18pt;
+        }
+
+        .header h3 {
+            margin: 3px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #444;
+            padding: 6px;
+            font-size: 9pt;
+            word-wrap: break-word;
+        }
+
+        th:nth-child(1), td:nth-child(1) { width: 10%; text-align: center; }
+        th:nth-child(2), td:nth-child(2) { width: 65%; }
+        th:nth-child(3), td:nth-child(3) { width: 25%; text-align: right; }
+
+        .total-box {
+            margin-top: 10px;
+            font-size: 10pt;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        p {
+            font-size: 9pt;
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h3 class="urdu">جماعت المسلمین مانچے</h3>
+        <h3 class="marathi">जमातुल मुस्लिमीन मणचे</h3>
+        <h3>Jamatul Muslimeen Manche</h3>
+        <small>Reg. No: F-3495/10/08/10</small>
+    </div>
+
+    <p><strong>Bill No:</strong> {{ data.bill_no }} | <strong>Date:</strong> {{ data.date }}</p>
+    <p><strong>Name:</strong> {{ data.name }}<br><strong>Address:</strong> {{ data.address }}</p>
+
+    <table>
+        <tr>
+            <th>S.No</th>
+            <th>Description</th>
+            <th>Charges ₹</th>
+        </tr>
+        {% for i in range(1, data.item_count + 1) %}
+        <tr>
+            <td>{{ i }}</td>
+            <td>{{ data['desc' ~ i] }}</td>
+            <td>{{ data['charge' ~ i] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="total-box">
+        <p>Total: ₹ {{ data.total }}</p>
+        <p>In Words: {{ data.total_words }}</p>
+    </div>
+
+    <p><strong>Comments:</strong> {{ data.comments }}</p>
+
+    <p style="margin-top: 50px;">
+        Authorized Signature ______________________ &nbsp;&nbsp;&nbsp;&nbsp;
+        Treasurer Signature ______________________
+    </p>
+
+</body>
+</html>
