@@ -1,0 +1,124 @@
+<!-- templates/form.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Patti Form</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 10px;
+            padding: 0;
+            background: #f2f2f2;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+
+        .item-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .item-row input {
+            flex: 1;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        #addRow {
+            background: #007bff;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .item-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Patti Form</h2>
+    <form method="POST" action="/generate">
+        <label>Date:</label>
+        <input type="date" name="date" required>
+
+        <label>Bill No:</label>
+        <input type="text" name="bill_no" required>
+
+        <label>Name:</label>
+        <input type="text" name="name" required>
+
+        <label>Address:</label>
+        <textarea name="address" rows="2" required></textarea>
+
+        <div id="items">
+            <div class="item-row">
+                <input type="text" name="desc1" placeholder="Description">
+                <input type="text" name="charge1" placeholder="Charges">
+            </div>
+        </div>
+
+        <button type="button" id="addRow">+ Add Item</button>
+
+        <label>Comments:</label>
+        <textarea name="comments" rows="2"></textarea>
+
+        <button type="submit">Generate PDF</button>
+    </form>
+</div>
+
+<script>
+    let count = 1;
+    document.getElementById('addRow').addEventListener('click', function () {
+        count++;
+        const container = document.getElementById('items');
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `
+            <input type="text" name="desc${count}" placeholder="Description">
+            <input type="text" name="charge${count}" placeholder="Charges">
+        `;
+        container.appendChild(row);
+    });
+</script>
+</body>
+</html>
