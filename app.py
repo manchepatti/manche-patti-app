@@ -6,6 +6,7 @@ from num2words import num2words
 import pdfkit
 from pdfkit.configuration import Configuration  # 👈 Add this
 config = Configuration(wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")  # 👈 Set path
+pdfkit.from_string(rendered, file_name, options=options, configuration=config)
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv  # ✅ Step 1: Load .env
