@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Patti Form</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -9,23 +10,52 @@
             font-size: 14px;
             background-color: #f2f2f2;
         }
+        form {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
         label {
-            width: 140px;
-            display: inline-block;
+            width: 100%;
+            display: block;
+            margin-top: 10px;
             font-weight: bold;
         }
         input, textarea {
-            width: 300px;
+            width: 100%;
             margin-bottom: 10px;
             padding: 6px;
             border: 1px solid #ccc;
             border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
         }
         .item-row {
+            display: flex;
+            gap: 10px;
             margin-bottom: 10px;
+            align-items: center;
+        }
+        .item-row input[type="text"],
+        .item-row input[type="number"] {
+            width: 42%;
+        }
+        .remove-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+        .remove-btn:hover {
+            background-color: #c82333;
         }
         button {
-            padding: 6px 12px;
+            padding: 10px 16px;
             background-color: #28a745;
             color: white;
             border: none;
@@ -38,41 +68,42 @@
         .total-box {
             font-weight: bold;
             margin-top: 10px;
+            font-size: 1.1em;
+            text-align: right;
         }
     </style>
 </head>
 <body>
-    <h2>Patti Receipt Generator</h2>
+    <h2 style="text-align: center;">Patti Receipt Generator</h2>
     <form action="/generate" method="post">
-        <label>Bill No:</label>
-        <input name="bill_no" value="{{ next_bill_no }}" readonly><br>
+        <label for="bill_no">Bill No:</label>
+        <input id="bill_no" name="bill_no" value="{{ next_bill_no }}" readonly>
 
-        <label>Date:</label>
-        <input type="date" name="date" required><br>
+        <label for="date">Date:</label>
+        <input id="date" type="date" name="date" required>
 
-        <label>Name:</label>
-        <input name="name" required><br>
+        <label for="name">Name:</label>
+        <input id="name" name="name" required>
 
-        <label>Address:</label>
-        <textarea name="address" rows="2"></textarea><br>
+        <label for="address">Address:</label>
+        <textarea id="address" name="address" rows="2"></textarea>
 
         <div id="items">
             <div class="item-row">
-                <label>Item 1:</label>
-                <input name="desc1" placeholder="Description">
-                <label>₹</label>
-                <input name="charge1" type="number" step="0.01" placeholder="Amount" oninput="calculateTotal()"><br>
+                <input type="text" name="desc1" placeholder="Description">
+                <input type="number" name="charge1" step="0.01" placeholder="Amount" oninput="calculateTotal()">
+                <!-- ❌ Remove button (not shown on first item) -->
             </div>
         </div>
 
-        <button type="button" onclick="addItem()">+ Add Item</button><br><br>
+        <button type="button" onclick="addItem()">+ Add Item</button>
 
-        <div class="total-box">Total Amount: ₹ <span id="total">0.00</span></div><br>
+        <div class="total-box">Total Amount: ₹ <span id="total">0.00</span></div>
 
-        <label>Comments:</label>
-        <textarea name="comments" rows="2"></textarea><br>
+        <label for="comments">Comments:</label>
+        <textarea id="comments" name="comments" rows="2"></textarea>
 
-        <button type="submit">Download PDF</button>
+        <button type="submit" style="width: 100%; margin-top: 15px;">Download PDF</button>
     </form>
 
     <script>
@@ -80,24 +111,34 @@
 
         function addItem() {
             count++;
-            const div = document.createElement("div");
-            div.className = "item-row";
-            div.innerHTML = `
-                <label>Item ${count}:</label>
-                <input name="desc${count}" placeholder="Description">
-                <label>₹</label>
-                <input name="charge${count}" type="number" step="0.01" placeholder="Amount" oninput="calculateTotal()"><br>`;
-            document.getElementById("items").appendChild(div);
+            const container = document.getElementById("items");
+
+            const row = document.createElement("div");
+            row.className = "item-row";
+
+            row.innerHTML = `
+                <input type="text" name="desc${count}" placeholder="Description">
+                <input type="number" name="charge${count}" step="0.01" placeholder="Amount" oninput="calculateTotal()">
+                <button type="button" class="remove-btn" onclick="removeItem(this)">❌</button>
+            `;
+
+            container.appendChild(row);
+        }
+
+        function removeItem(button) {
+            const row = button.parentNode;
+            row.remove();
+            calculateTotal();
         }
 
         function calculateTotal() {
             let total = 0;
-            for (let i = 1; i <= count; i++) {
-                const charge = document.querySelector(`input[name='charge${i}']`);
-                if (charge && charge.value) {
-                    total += parseFloat(charge.value) || 0;
+            const chargeInputs = document.querySelectorAll("[name^='charge']");
+            chargeInputs.forEach(input => {
+                if (input.value) {
+                    total += parseFloat(input.value) || 0;
                 }
-            }
+            });
             document.getElementById("total").textContent = total.toFixed(2);
         }
     </script>
