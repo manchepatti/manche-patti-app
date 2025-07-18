@@ -1,35 +1,56 @@
 # === app.py ===
 from flask import Flask, render_template, request, send_file
-import pdfkit
-import uuid
 import os
-from num2words import num2words
 from datetime import datetime
+from num2words import num2words
+import pdfkit
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
 
+# Google Sheets Setup
+scope = ["https://spreadsheets.google.com/feeds", 
+         "https://www.googleapis.com/auth/spreadsheets", 
+         "https://www.googleapis.com/auth/drive.file", 
+         "https://www.googleapis.com/auth/drive"]
+
+creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+client = gspread.authorize(creds)
+sheet = client.open(os.getenv("GOOGLE_SHEET_NAME")).sheet1
+
 @app.route('/')
 def form():
-    return render_template('form.html')
+    # Fetch last Bill No from top row (row 2)
+    try:
+        records = sheet.get_all_records()
+        if records:
+            latest_bill_no = int(records[0]['Bill No']) + 1
+        else:
+            latest_bill_no = 1
+    except:
+        latest_bill_no = 1
+
+    return render_template('form.html', bill_no=latest_bill_no)
 
 @app.route('/generate', methods=['POST'])
 def generate():
     data = request.form.to_dict()
     total = 0
     i = 1
-    descriptions = []
+    item_details_list = []
 
     while f'desc{i}' in data or f'charge{i}' in data:
+        desc = data.get(f'desc{i}', '').strip()
+        charge = data.get(f'charge{i}', '').strip()
+        item_details_list.append(f"{desc} - ₹{charge}")
         try:
-            charge = float(data.get(f'charge{i}', 0))
-            total += charge
+            total += float(charge)
         except ValueError:
-            charge = 0
-        descriptions.append(f"{data.get(f'desc{i}', '')} - {charge}")
+            pass
         i += 1
 
+    item_details = "\n".join(item_details_list)
     data['item_count'] = i - 1
     data['total'] = "{:.2f}".format(total)
     data['total_words'] = num2words(total, to='cardinal', lang='en').title() + " Rupees Only"
@@ -44,38 +65,24 @@ def generate():
 
     data['date'] = formatted_date_display
 
-    # Save to Google Sheet
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("client_secret.json", scope)
-    client = gspread.authorize(creds)
-
-    sheet_name = os.environ.get("GOOGLE_SHEET_NAME", "Patti_Form_Data")
-    sheet = client.open(sheet_name).sheet1
-
-    desc_combined = "\n".join(descriptions)
-    sheet.append_row([
-        formatted_date_display,
-        data.get('bill_no', ''),
-        data.get('name', ''),
-        data.get('address', ''),
-        desc_combined,
-        data.get('total', ''),
-        data.get('total_words', ''),
+    # Insert at top of Google Sheet (after headers)
+    sheet.insert_row([
+        data['date'],
+        data['bill_no'],
+        data['name'],
+        data['address'],
+        item_details,
+        data['total'],
+        data['total_words'],
         data.get('comments', '')
-    ])
+    ], 2)
 
-    urdu_font_path = os.path.abspath("static/fonts/NotoNastaliqUrdu-Regular.ttf")
-    marathi_font_path = os.path.abspath("static/fonts/NotoSansDevanagari-Regular.ttf")
-
-    rendered = render_template('receipt_template.html', data=data,
-                               urdu_font_path=urdu_font_path, marathi_font_path=marathi_font_path)
-
+    # PDF Generation
+    rendered = render_template('receipt_template.html', data=data)
     safe_bill = data['bill_no'].replace(" ", "_")
     safe_name = data['name'].replace(" ", "_")
     file_name = f"{safe_bill}_{safe_name}_{formatted_date_filename}.pdf"
 
-    # Use default wkhtmltopdf
-    config = pdfkit.configuration()
     options = {
         'page-size': 'A5',
         'encoding': 'UTF-8',
@@ -85,7 +92,9 @@ def generate():
         'margin-right': '10mm'
     }
 
-    pdfkit.from_string(rendered, file_name, configuration=config, options=options)
+    config = pdfkit.configuration(wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
+    pdfkit.from_string(rendered, file_name, options=options, configuration=config)
+
     return send_file(file_name, as_attachment=True)
 
 if __name__ == '__main__':
