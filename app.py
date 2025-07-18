@@ -4,18 +4,22 @@ import os
 from datetime import datetime
 from num2words import num2words
 import pdfkit
-from pdfkit.configuration import Configuration  # 👈 Add this
-config = Configuration(wkhtmltopdf="/usr/local/bin/wkhtmltopdf")  # 👈 Set path
-pdfkit.from_string(rendered, file_name, options=options, configuration=config)
+from pdfkit.configuration import Configuration
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from dotenv import load_dotenv  # ✅ Step 1: Load .env
+from dotenv import load_dotenv
+import shutil
 
-load_dotenv()  # ✅ Step 2: Make sure environment variables are available
+# ✅ Load environment variables
+load_dotenv()
 
+# ✅ Setup Flask
 app = Flask(__name__)
 
-# --- Google Sheet Setup ---
+# ✅ Setup wkhtmltopdf path
+config = Configuration(wkhtmltopdf="/usr/local/bin/wkhtmltopdf")  # For Render deployment
+
+# ✅ Google Sheets setup
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/spreadsheets",
@@ -25,18 +29,17 @@ scope = [
 creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 client = gspread.authorize(creds)
 
-# ✅ Step 3: Make sure the sheet name is properly loaded from .env
+# ✅ Get sheet name from .env
 sheet_name = os.getenv("GOOGLE_SHEET_NAME")
 if not sheet_name:
     raise Exception("❌ GOOGLE_SHEET_NAME not found in .env file!")
 
 sheet = client.open(sheet_name).sheet1
 
-# --- Get Next Bill Number ---
+# ✅ Function to get the next bill number
 def get_next_bill_number():
     records = sheet.get_all_records()
     bill_numbers = []
-
     for row in records:
         for key in row:
             if key.strip().lower() == 'bill no':
@@ -44,15 +47,15 @@ def get_next_bill_number():
                 if str(bill).isdigit():
                     bill_numbers.append(int(bill))
                 break
-
     return str(max(bill_numbers) + 1) if bill_numbers else "1"
 
-# --- Routes ---
+# ✅ Home route - shows the form
 @app.route('/')
 def form():
     next_bill_no = get_next_bill_number()
     return render_template('form.html', next_bill_no=next_bill_no)
 
+# ✅ Generate receipt
 @app.route('/generate', methods=['POST'])
 def generate():
     data = request.form.to_dict()
@@ -86,19 +89,19 @@ def generate():
 
     data['date'] = formatted_date_display
 
-    # Insert to Google Sheet (at top, after headers)
+    # ✅ Insert into Google Sheet
     sheet.insert_row([
-        data['date'],
-        data['bill_no'],
-        data['name'],
-        data['address'],
+        data.get('date', ''),
+        data.get('bill_no', ''),
+        data.get('name', ''),
+        data.get('address', ''),
         item_details,
         data['total'],
         data['total_words'],
         data.get('comments', '')
     ], index=2)
 
-    # PDF generation
+    # ✅ Generate PDF
     rendered = render_template('receipt_template.html', data=data)
     safe_bill = data['bill_no'].replace(" ", "_")
     safe_name = data['name'].replace(" ", "_")
@@ -114,7 +117,9 @@ def generate():
     }
 
     pdfkit.from_string(rendered, file_name, options=options, configuration=config)
-    return send_file(file_name, as_attachment=True)
+    return send_file(file_name, as_attachment=True, download_name=file_name)
 
+# ✅ Start the app
 if __name__ == '__main__':
+    print("📍 wkhtmltopdf path:", shutil.which("wkhtmltopdf"))
     app.run(debug=True)
