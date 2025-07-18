@@ -1,5 +1,6 @@
-Flask
+flask
 num2words
+pdfkit
 gspread
 oauth2client
-weasyprint
+python-dotenv
