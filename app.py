@@ -4,34 +4,53 @@ import os
 from datetime import datetime
 from num2words import num2words
 import pdfkit
+from pdfkit.configuration import Configuration  # 👈 Add this
+config = Configuration(wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")  # 👈 Set path
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from dotenv import load_dotenv  # ✅ Step 1: Load .env
+
+load_dotenv()  # ✅ Step 2: Make sure environment variables are available
 
 app = Flask(__name__)
 
-# Google Sheets Setup
-scope = ["https://spreadsheets.google.com/feeds", 
-         "https://www.googleapis.com/auth/spreadsheets", 
-         "https://www.googleapis.com/auth/drive.file", 
-         "https://www.googleapis.com/auth/drive"]
-
+# --- Google Sheet Setup ---
+scope = [
+    "https://spreadsheets.google.com/feeds",
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive"
+]
 creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 client = gspread.authorize(creds)
-sheet = client.open(os.getenv("GOOGLE_SHEET_NAME")).sheet1
 
+# ✅ Step 3: Make sure the sheet name is properly loaded from .env
+sheet_name = os.getenv("GOOGLE_SHEET_NAME")
+if not sheet_name:
+    raise Exception("❌ GOOGLE_SHEET_NAME not found in .env file!")
+
+sheet = client.open(sheet_name).sheet1
+
+# --- Get Next Bill Number ---
+def get_next_bill_number():
+    records = sheet.get_all_records()
+    bill_numbers = []
+
+    for row in records:
+        for key in row:
+            if key.strip().lower() == 'bill no':
+                bill = row[key]
+                if str(bill).isdigit():
+                    bill_numbers.append(int(bill))
+                break
+
+    return str(max(bill_numbers) + 1) if bill_numbers else "1"
+
+# --- Routes ---
 @app.route('/')
 def form():
-    # Fetch last Bill No from top row (row 2)
-    try:
-        records = sheet.get_all_records()
-        if records:
-            latest_bill_no = int(records[0]['Bill No']) + 1
-        else:
-            latest_bill_no = 1
-    except:
-        latest_bill_no = 1
-
-    return render_template('form.html', bill_no=latest_bill_no)
+    next_bill_no = get_next_bill_number()
+    return render_template('form.html', next_bill_no=next_bill_no)
 
 @app.route('/generate', methods=['POST'])
 def generate():
@@ -43,7 +62,8 @@ def generate():
     while f'desc{i}' in data or f'charge{i}' in data:
         desc = data.get(f'desc{i}', '').strip()
         charge = data.get(f'charge{i}', '').strip()
-        item_details_list.append(f"{desc} - ₹{charge}")
+        if desc or charge:
+            item_details_list.append(f"{desc} - ₹{charge}")
         try:
             total += float(charge)
         except ValueError:
@@ -65,7 +85,7 @@ def generate():
 
     data['date'] = formatted_date_display
 
-    # Insert at top of Google Sheet (after headers)
+    # Insert to Google Sheet (at top, after headers)
     sheet.insert_row([
         data['date'],
         data['bill_no'],
@@ -75,9 +95,9 @@ def generate():
         data['total'],
         data['total_words'],
         data.get('comments', '')
-    ], 2)
+    ], index=2)
 
-    # PDF Generation
+    # PDF generation
     rendered = render_template('receipt_template.html', data=data)
     safe_bill = data['bill_no'].replace(" ", "_")
     safe_name = data['name'].replace(" ", "_")
@@ -92,9 +112,7 @@ def generate():
         'margin-right': '10mm'
     }
 
-    config = pdfkit.configuration(wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
     pdfkit.from_string(rendered, file_name, options=options, configuration=config)
-
     return send_file(file_name, as_attachment=True)
 
 if __name__ == '__main__':
