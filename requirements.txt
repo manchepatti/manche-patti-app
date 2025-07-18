@@ -1,6 +1,6 @@
-flask
-num2words
+Flask
 pdfkit
+num2words
 gspread
 oauth2client
 python-dotenv
