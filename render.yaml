@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: pdfkit-app
+    env: python
+    buildCommand: ./render-build.sh
+    startCommand: python app.py
+    plan: free
