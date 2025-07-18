@@ -10,16 +10,11 @@ from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 import shutil
 
-# ✅ Load environment variables
-load_dotenv()
+load_dotenv()  # Load environment variables
 
-# ✅ Setup Flask
 app = Flask(__name__)
 
-# ✅ Setup wkhtmltopdf path
-config = Configuration(wkhtmltopdf="/usr/local/bin/wkhtmltopdf")  # For Render deployment
-
-# ✅ Google Sheets setup
+# --- Google Sheet Setup ---
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/spreadsheets",
@@ -29,17 +24,18 @@ scope = [
 creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 client = gspread.authorize(creds)
 
-# ✅ Get sheet name from .env
+# Sheet name from .env
 sheet_name = os.getenv("GOOGLE_SHEET_NAME")
 if not sheet_name:
     raise Exception("❌ GOOGLE_SHEET_NAME not found in .env file!")
 
 sheet = client.open(sheet_name).sheet1
 
-# ✅ Function to get the next bill number
+# --- Get Next Bill Number ---
 def get_next_bill_number():
     records = sheet.get_all_records()
     bill_numbers = []
+
     for row in records:
         for key in row:
             if key.strip().lower() == 'bill no':
@@ -47,15 +43,15 @@ def get_next_bill_number():
                 if str(bill).isdigit():
                     bill_numbers.append(int(bill))
                 break
+
     return str(max(bill_numbers) + 1) if bill_numbers else "1"
 
-# ✅ Home route - shows the form
+# --- Routes ---
 @app.route('/')
 def form():
     next_bill_no = get_next_bill_number()
     return render_template('form.html', next_bill_no=next_bill_no)
 
-# ✅ Generate receipt
 @app.route('/generate', methods=['POST'])
 def generate():
     data = request.form.to_dict()
@@ -89,19 +85,22 @@ def generate():
 
     data['date'] = formatted_date_display
 
-    # ✅ Insert into Google Sheet
-    sheet.insert_row([
-        data.get('date', ''),
-        data.get('bill_no', ''),
-        data.get('name', ''),
-        data.get('address', ''),
-        item_details,
-        data['total'],
-        data['total_words'],
-        data.get('comments', '')
-    ], index=2)
+    # Insert to Google Sheet (at top, after headers)
+    try:
+        sheet.insert_row([
+            data['date'],
+            data['bill_no'],
+            data['name'],
+            data['address'],
+            item_details,
+            data['total'],
+            data['total_words'],
+            data.get('comments', '')
+        ], index=2)
+    except Exception as e:
+        return f"❌ Google Sheet Error: {e}"
 
-    # ✅ Generate PDF
+    # PDF generation
     rendered = render_template('receipt_template.html', data=data)
     safe_bill = data['bill_no'].replace(" ", "_")
     safe_name = data['name'].replace(" ", "_")
@@ -116,10 +115,11 @@ def generate():
         'margin-right': '10mm'
     }
 
+    config = Configuration(wkhtmltopdf="/usr/local/bin/wkhtmltopdf")  # Render path
     pdfkit.from_string(rendered, file_name, options=options, configuration=config)
+
     return send_file(file_name, as_attachment=True, download_name=file_name)
 
-# ✅ Start the app
 if __name__ == '__main__':
     print("📍 wkhtmltopdf path:", shutil.which("wkhtmltopdf"))
     app.run(debug=True)
