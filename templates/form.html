@@ -1,178 +1,105 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Patti Form</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 15px;
-    }
-
-    .header {
-      background-color: #28a745;
-      color: white;
-      text-align: center;
-      padding: 8px 0;
-      margin: 0;
-      width: 100%;
-    }
-
-    .header h1, .header h2, .header h3 {
-      margin: 0;
-    }
-
-    .form-group {
-      margin-bottom: 10px;
-    }
-
-    label {
-      display: block;
-      font-weight: bold;
-    }
-
-    input, textarea {
-      width: 100%;
-      padding: 6px;
-      margin-top: 4px;
-      margin-bottom: 8px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-
-    th, td {
-      border: 1px solid #ccc;
-      padding: 6px;
-      text-align: left;
-    }
-
-    button {
-      padding: 8px 16px;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    .add-row-btn {
-      background-color: #007bff;
-      margin-bottom: 10px;
-    }
-
-    .total-box {
-      font-weight: bold;
-      margin-top: 10px;
-    }
-
-    @media (max-width: 600px) {
-      input, textarea, button {
-        width: 100%;
-      }
-
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-
-      th, td {
-        text-align: right;
-        padding-left: 50%;
-        position: relative;
-      }
-
-      th::before, td::before {
-        position: absolute;
-        left: 10px;
-        width: 45%;
-        white-space: nowrap;
-      }
-    }
-  </style>
+    <title>Patti Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            font-size: 14px;
+            background-color: #f2f2f2;
+        }
+        label {
+            width: 140px;
+            display: inline-block;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 300px;
+            margin-bottom: 10px;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .item-row {
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 6px 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .total-box {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
+    <h2>Patti Receipt Generator</h2>
+    <form action="/generate" method="post">
+        <label>Bill No:</label>
+        <input name="bill_no" value="{{ next_bill_no }}" readonly><br>
 
-  <div class="header">
-    <h3 style="font-family: 'Noto Nastaliq Urdu', serif;">جماعت المسلمین مانچے</h3>
-    <h3 style="font-family: 'Noto Sans Devanagari', sans-serif;">जमातुल मुस्लिमीन मणचे</h3>
-    <h2>PATTI RECEIPT FORM</h2>
-  </div>
+        <label>Date:</label>
+        <input type="date" name="date" required><br>
 
-  <form method="POST" action="/generate">
-    <div class="form-group">
-      <label for="date">Date</label>
-      <input type="date" name="date" required>
-    </div>
+        <label>Name:</label>
+        <input name="name" required><br>
 
-    <div class="form-group">
-      <label for="bill_no">Bill No</label>
-      <input type="text" name="bill_no" id="bill_no" value="{{ bill_no }}" readonly>
-    </div>
+        <label>Address:</label>
+        <textarea name="address" rows="2"></textarea><br>
 
-    <div class="form-group">
-      <label for="name">Name</label>
-      <input type="text" name="name" required>
-    </div>
+        <div id="items">
+            <div class="item-row">
+                <label>Item 1:</label>
+                <input name="desc1" placeholder="Description">
+                <label>₹</label>
+                <input name="charge1" type="number" step="0.01" placeholder="Amount" oninput="calculateTotal()"><br>
+            </div>
+        </div>
 
-    <div class="form-group">
-      <label for="address">Address</label>
-      <textarea name="address" rows="2" required></textarea>
-    </div>
+        <button type="button" onclick="addItem()">+ Add Item</button><br><br>
 
-    <table id="items-table">
-      <thead>
-        <tr>
-          <th>Description</th>
-          <th>Charge</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><input type="text" name="desc1"></td>
-          <td><input type="number" name="charge1" step="0.01" class="charge-input"></td>
-        </tr>
-      </tbody>
-    </table>
+        <div class="total-box">Total Amount: ₹ <span id="total">0.00</span></div><br>
 
-    <button type="button" class="add-row-btn" onclick="addRow()">Add Row</button>
+        <label>Comments:</label>
+        <textarea name="comments" rows="2"></textarea><br>
 
-    <div class="total-box">Total: ₹<span id="live_total">0.00</span></div>
+        <button type="submit">Download PDF</button>
+    </form>
 
-    <div class="form-group">
-      <label for="comments">Comments</label>
-      <textarea name="comments" rows="2"></textarea>
-    </div>
+    <script>
+        let count = 1;
 
-    <button type="submit">Generate PDF</button>
-  </form>
+        function addItem() {
+            count++;
+            const div = document.createElement("div");
+            div.className = "item-row";
+            div.innerHTML = `
+                <label>Item ${count}:</label>
+                <input name="desc${count}" placeholder="Description">
+                <label>₹</label>
+                <input name="charge${count}" type="number" step="0.01" placeholder="Amount" oninput="calculateTotal()"><br>`;
+            document.getElementById("items").appendChild(div);
+        }
 
-  <script>
-    let rowCount = 1;
-
-    function addRow() {
-      rowCount++;
-      const tbody = document.querySelector('#items-table tbody');
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td><input type="text" name="desc${rowCount}"></td>
-        <td><input type="number" name="charge${rowCount}" step="0.01" class="charge-input"></td>
-      `;
-      tbody.appendChild(row);
-    }
-
-    document.addEventListener('input', function () {
-      let total = 0;
-      document.querySelectorAll('.charge-input').forEach(input => {
-        let val = parseFloat(input.value);
-        if (!isNaN(val)) total += val;
-      });
-      document.getElementById('live_total').textContent = total.toFixed(2);
-    });
-  </script>
-
+        function calculateTotal() {
+            let total = 0;
+            for (let i = 1; i <= count; i++) {
+                const charge = document.querySelector(`input[name='charge${i}']`);
+                if (charge && charge.value) {
+                    total += parseFloat(charge.value) || 0;
+                }
+            }
+            document.getElementById("total").textContent = total.toFixed(2);
+        }
+    </script>
 </body>
 </html>
