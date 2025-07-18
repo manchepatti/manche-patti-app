@@ -1,124 +1,77 @@
-<!-- templates/form.html -->
+<!-- === templates/form.html === -->
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Patti Form</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patti Receipt Form</title>
     <style>
         body {
-            font-family: sans-serif;
-            margin: 10px;
-            padding: 0;
-            background: #f2f2f2;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: auto;
-            background: #fff;
+            font-family: Arial, sans-serif;
             padding: 20px;
-            border-radius: 8px;
         }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
+        .input-group {
+            margin-bottom: 10px;
         }
-
-        label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        input[type="text"],
-        input[type="date"],
-        textarea {
+        input, textarea {
+            padding: 5px;
             width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            box-sizing: border-box;
-        }
-
-        .item-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .item-row input {
-            flex: 1;
-        }
-
-        button {
-            margin-top: 15px;
-            padding: 10px 20px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            width: 100%;
-            font-size: 16px;
-        }
-
-        #addRow {
-            background: #007bff;
-            margin-top: 10px;
-        }
-
-        @media (max-width: 600px) {
-            .item-row {
-                flex-direction: column;
-            }
         }
     </style>
 </head>
 <body>
-<div class="container">
     <h2>Patti Form</h2>
-    <form method="POST" action="/generate">
-        <label>Date:</label>
-        <input type="date" name="date" required>
 
-        <label>Bill No:</label>
-        <input type="text" name="bill_no" required>
-
-        <label>Name:</label>
-        <input type="text" name="name" required>
-
-        <label>Address:</label>
-        <textarea name="address" rows="2" required></textarea>
-
-        <div id="items">
-            <div class="item-row">
-                <input type="text" name="desc1" placeholder="Description">
-                <input type="text" name="charge1" placeholder="Charges">
-            </div>
+    <form action="/generate" method="post">
+        <div class="input-group">
+            <label>Date:</label>
+            <input type="date" name="date" required>
+        </div>
+        <div class="input-group">
+            <label>Bill No:</label>
+            <input type="text" name="bill_no" id="bill_no" value="{{ bill_no }}" readonly>
+        </div>
+        <div class="input-group">
+            <label>Name:</label>
+            <input type="text" name="name" required>
+        </div>
+        <div class="input-group">
+            <label>Address:</label>
+            <textarea name="address" required></textarea>
         </div>
 
-        <button type="button" id="addRow">+ Add Item</button>
+        <div class="input-group">
+            <label>Item 1:</label>
+            <input type="text" name="desc1" placeholder="Description">
+            <input type="number" name="charge1" placeholder="Amount" step="0.01">
+        </div>
 
-        <label>Comments:</label>
-        <textarea name="comments" rows="2"></textarea>
+        <div class="input-group">
+            <label>Item 2:</label>
+            <input type="text" name="desc2" placeholder="Description">
+            <input type="number" name="charge2" placeholder="Amount" step="0.01">
+        </div>
+
+        <!-- Add more item groups as needed -->
+
+        <p><strong>Total: <span id="live_total">₹ 0.00</span></strong></p>
+
+        <div class="input-group">
+            <label>Comments:</label>
+            <textarea name="comments"></textarea>
+        </div>
 
         <button type="submit">Generate PDF</button>
     </form>
-</div>
 
-<script>
-    let count = 1;
-    document.getElementById('addRow').addEventListener('click', function () {
-        count++;
-        const container = document.getElementById('items');
-        const row = document.createElement('div');
-        row.className = 'item-row';
-        row.innerHTML = `
-            <input type="text" name="desc${count}" placeholder="Description">
-            <input type="text" name="charge${count}" placeholder="Charges">
-        `;
-        container.appendChild(row);
-    });
-</script>
+    <script>
+        function updateTotal() {
+            let total = 0;
+            document.querySelectorAll('input[name^="charge"]').forEach(input => {
+                let val = parseFloat(input.value);
+                if (!isNaN(val)) total += val;
+            });
+            document.getElementById("live_total").innerText = "₹ " + total.toFixed(2);
+        }
+        document.addEventListener('input', updateTotal);
+    </script>
 </body>
 </html>
