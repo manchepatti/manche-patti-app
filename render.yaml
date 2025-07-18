@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: pdfkit-app
+    name: my-app
     env: python
     buildCommand: ./render-build.sh
     startCommand: python app.py
