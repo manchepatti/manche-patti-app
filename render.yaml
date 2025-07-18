@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: your-app-name
+    name: pdf-generator
     env: python
     buildCommand: |
       apt-get update
@@ -11,4 +11,4 @@ services:
     startCommand: python app.py
     envVars:
       - key: GOOGLE_SHEET_NAME
-        value: your-google-sheet-name
+        value: YOUR_SHEET_NAME_HERE
