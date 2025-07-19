@@ -166,7 +166,7 @@ def generate():
 
     return send_file(file_name, as_attachment=True, download_name=file_name)
 
-# Start Flask app
+# Start the Flask app
 if __name__ == '__main__':
     print("📍 wkhtmltopdf path:", wkhtmltopdf_path)
     app.run(debug=True)
