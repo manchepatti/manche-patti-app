@@ -151,7 +151,7 @@ def generate():
         'margin-top': '5mm',
         'margin-bottom': '5mm',
         'margin-left': '5mm',
-        'margin-right': '5mm'
+        'margin-right': '5mm',
         'enable-local-file-access': ''
     }
 
