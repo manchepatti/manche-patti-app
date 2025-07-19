@@ -148,10 +148,11 @@ def generate():
     options = {
         'page-size': 'A5',
         'encoding': 'UTF-8',
-        'margin-top': '10mm',
-        'margin-bottom': '10mm',
-        'margin-left': '10mm',
-        'margin-right': '10mm'
+        'margin-top': '5mm',
+        'margin-bottom': '5mm',
+        'margin-left': '5mm',
+        'margin-right': '5mm'
+        'enable-local-file-access': None  # This is important!
     }
 
     pdfkit.from_string(rendered, file_name, options=options, configuration=config)
