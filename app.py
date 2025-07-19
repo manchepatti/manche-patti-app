@@ -152,7 +152,7 @@ def generate():
         'margin-bottom': '5mm',
         'margin-left': '5mm',
         'margin-right': '5mm'
-        'enable-local-file-access': None  # This is important!
+        'enable-local-file-access': ''
     }
 
     pdfkit.from_string(rendered, file_name, options=options, configuration=config)
