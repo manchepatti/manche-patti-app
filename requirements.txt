@@ -1,15 +1,6 @@
-<<<<<<< HEAD
-flask
-num2words
-pdfkit
-gspread
-oauth2client
-python-dotenv
-=======
 Flask
-pdfkit
-num2words
 gspread
+num2words
 oauth2client
+pdfkit
 python-dotenv
->>>>>>> f524e1591a8dbdefaba05cbc083bec0ddc16b284
