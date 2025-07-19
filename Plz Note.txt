@@ -1,0 +1,60 @@
+Patti Receipt App – Installation & Usage Notes
+✅ REQUIREMENTS
+Python installed (preferably Python 3.8+)
+
+Download: https://www.python.org/downloads
+
+Python libraries (install using Command Prompt):
+
+bash
+Copy code
+pip install flask
+pip install pdfkit
+pip install num2words
+wkhtmltopdf installed:
+
+Download from: https://wkhtmltopdf.org/downloads.html
+
+Default install path:
+C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe
+
+Required by app.py to generate PDF.
+
+
+
+📁 Folder Structure
+css
+Copy code
+patti_form_app/
+├── app.py
+├── templates/
+│   ├── form.html
+│   └── receipt_template.html
+├── static/
+│   └── fonts/
+│       ├── NotoNastaliqUrdu-Regular.ttf   ← Urdu font
+│       └── NotoSansDevanagari-Regular.ttf ← Marathi font
+
+
+
+
+▶️ HOW TO RUN THE APP
+Open Command Prompt.
+
+Navigate to the folder:
+
+bash
+Copy code
+cd C:\Users\<YourUsername>\Desktop\patti_form_app
+Start the server:
+
+bash
+Copy code
+python app.py
+Open browser and go to:
+
+cpp
+Copy code
+http://127.0.0.1:5000
+
+

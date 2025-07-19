@@ -1,0 +1,6 @@
+flask
+num2words
+pdfkit
+gspread
+oauth2client
+python-dotenv
